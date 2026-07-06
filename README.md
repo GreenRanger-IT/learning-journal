@@ -5,7 +5,7 @@
 ---
 
 Five years of production SRE work — managing Kubernetes clusters across GCP and Azure,
-running enterprise software for energy companies, responding to incidents at 3am —
+running enterprise software for global customers, responding to incidents under pressure —
 taught me things no certification covers.
 
 This journal documents the principles, patterns, and mental models I've accumulated.
@@ -24,7 +24,7 @@ Each entry is designed to stand alone as a blog post, LinkedIn article, or YouTu
    - [Severity as an exit code](#severity-as-an-exit-code)
    - [Classify before you recommend](#classify-before-you-recommend)
    - [Causation chains vs correlation](#causation-chains-vs-correlation)
-   - [Building for the 3am reader](#building-for-the-3am-reader)
+   - [Building for the on-call reader](#building-for-the-on-call-reader)
 
 2. [Kubernetes in Production](#2-kubernetes-in-production)
    - [Container-level OOM vs pod-level OOM](#container-level-oom-vs-pod-level-oom)
@@ -65,7 +65,7 @@ The right architecture for AI-assisted operational tooling is two layers with a 
 contract between them — not one agent that does everything.
 
 **Layer 1 — The CLI tool:** collects data, applies severity rules, emits structured
-JSON. No AI. No network calls beyond the cluster. Works at 3am in CI with no one
+JSON. No AI. No network calls beyond the cluster. Runs unattended in CI with no one
 watching.
 
 **Layer 2 — The reasoning layer:** consumes the JSON, adds correlation across findings,
@@ -191,10 +191,10 @@ no evidence is dangerous — it sends the engineer down the wrong remediation pa
 
 ---
 
-### Building for the 3am reader
+### Building for the on-call reader
 
 Every design decision in an SRE tool should be made as if the person reading the
-output has been awake for 3 hours, is stressed, and needs to act in 5 minutes.
+output has been on call for hours, is stressed, and needs to act in 5 minutes.
 
 This constraint changes everything:
 
@@ -355,7 +355,7 @@ postmortem. The goal is to shorten the time between "problem starts" and "proble
 resolved."
 
 Platform engineering is proactive by design. You ask: what would a good senior SRE
-need at 3am? Then you build that, automate it, and make it available to everyone —
+need mid-incident? Then you build that, automate it, and make it available to everyone —
 before the incident.
 
 **The shift in questions:**
@@ -422,8 +422,8 @@ problem, because the security controls live in the platform layer.
 **The compliance angle:** enterprise platforms operate under security standards that
 require continuous compliance. A certificate with a name mismatch, an Azure storage
 account without soft-delete enabled, a service bus without TLS 1.2 minimum — these
-are platform misconfigurations that can pull a Digital License to Operate (DLO) and
-take services offline. Security hygiene is not optional in regulated industries.
+are platform misconfigurations that can trip a compliance gate and take services
+offline. Security hygiene is not optional in regulated industries.
 
 **The platform engineer's role in security:** you are not writing exploits or running
 penetration tests. You are building the guardrails: the policy enforcement, the audit
@@ -835,6 +835,10 @@ Built while shipping production SRE tooling for Kubernetes clusters running acro
 and Azure. Tools referenced in this journal:
 [kubectl-sentinel](https://github.com/GreenerPlatform/kubectl-sentinel) ·
 [incident-triage](https://github.com/GreenerPlatform/incident-triage)
+
+I also write **[AI Reliability Principles](https://www.linkedin.com/company/ai-reliability-principles/)** —
+a series on making AI dependable enough to trust with real operational decisions
+([read on Medium](https://olawaleogundiran.medium.com)).
 
 If something here helped you, the best way to say thanks is to open an issue on one
 of those repos with a problem you're trying to solve.
