@@ -13,8 +13,6 @@ Not theory. Not tutorials. Real lessons from real production systems, written so
 junior SREs can skip the mistakes and senior engineers can find the words for what
 they already know.
 
-Each entry is designed to stand alone as a blog post, LinkedIn article, or YouTube video.
-
 ---
 
 ## Table of Contents
@@ -77,6 +75,12 @@ consumes it. Neither layer needs to know how the other works internally.
 intelligent. The CLI must be deterministic — you can't have a non-deterministic gate
 in a deployment pipeline. The reasoning layer must be contextual — you can't express
 cross-finding correlation in a lookup table. Separating them gives you both.
+
+**The optional third layer — orchestration:** above these two, an agent can compose
+several tools (over a protocol like MCP) into goal-driven workflows — but it still only
+reasons over facts the deterministic layer established, human- or agent-in-the-loop,
+never silent auto-remediation. The rule holds all the way up: **each layer may reason,
+but only the bottom layer establishes fact.**
 
 **Where this pattern applies beyond SRE:** data pipelines (deterministic ingestion +
 ML enrichment), code review tools (static analysis + LLM reasoning), testing
@@ -162,7 +166,7 @@ When an OOMKill and a service availability drop appear in the same incident, the
 temptation is to say "OOMKill caused the degradation." That may be true. But you
 need to state the mechanism, not just the correlation.
 
-**The Via: pattern:** every link in a causation chain must name the propagation
+**The `Via:` pattern.** Every link in a causation chain must name the propagation
 mechanism:
 
 ```
