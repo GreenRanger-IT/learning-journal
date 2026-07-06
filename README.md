@@ -30,7 +30,6 @@ Each entry is designed to stand alone as a blog post, LinkedIn article, or YouTu
    - [Container-level OOM vs pod-level OOM](#container-level-oom-vs-pod-level-oom)
    - [HPA min==max: autoscaling that doesn't scale](#hpa-minmax-autoscaling-that-doesnt-scale)
    - [SLO burn rates: slow burns are the dangerous ones](#slo-burn-rates-slow-burns-are-the-dangerous-ones)
-   - [Reading Cloud Monitoring SLO alerts correctly](#reading-cloud-monitoring-slo-alerts-correctly)
 
 3. [Platform Engineering Mindset](#3-platform-engineering-mindset)
    - [SRE solves incidents; platform engineering prevents them](#sre-solves-incidents-platform-engineering-prevents-them)
@@ -51,8 +50,8 @@ Each entry is designed to stand alone as a blog post, LinkedIn article, or YouTu
 
 6. [Career: From SRE to Platform Engineering Leadership](#6-career-from-sre-to-platform-engineering-leadership)
    - [The SRE to platform engineer transition](#the-sre-to-platform-engineer-transition)
-   - [The learning path to CNCF contribution](#the-learning-path-to-cncf-contribution)
-   - [Certifications that matter](#certifications-that-matter)
+   - [The path to CNCF contribution](#the-path-to-cncf-contribution)
+   - [Certifications: the prep is the point](#certifications-the-prep-is-the-point)
    - [Ten principles for junior SREs](#ten-principles-for-junior-sres)
 
 ---
@@ -330,27 +329,11 @@ defence in depth: fast fires catch outages, slow fires catch the quiet drains.
 > rate. Look at the window error budget consumption. The alert tells you the rate of
 > consumption — not the current state.
 
----
-
-### Reading Cloud Monitoring SLO alerts correctly
-
-GCP Cloud Monitoring SLO alerts fire on `select_slo_burn_rate` — the rate at which
-the error budget is being consumed against a specific measurement window. They resolve
-automatically when the burn rate drops below the configured threshold.
-
-**What this means operationally:** do not manually resolve these alerts. The alert
-will close itself when the service recovers. Manually closing it hides the signal —
-if the burn rate picks up again, you want a new alert.
-
-**Parsing the alert title:** GCP SLO alert titles typically embed the service name
-and environment. Building a lookup table that maps environment tokens in the title
-(e.g., `[PROD]`, `[DEV]`) to namespaces and clusters is worth the investment — it
-removes a manual lookup step from every triage.
-
-**The correct question when you receive this alert:** not "is the service down?" but
-"how fast is the error budget draining, and will it exhaust before the end of the
-measurement period?" The burn rate multiplier gives you the answer: a 3x burn rate
-on a 30-day budget drains it in 10 days at the current rate.
+**In practice (e.g. GCP Cloud Monitoring):** these alerts fire on the rate of budget
+consumption and **auto-resolve** when it drops back below threshold — so don't manually
+close them. A manual close just hides the signal if the burn picks up again. And the
+question on receipt is never "is it down?" but "how fast is the budget draining, and will
+it exhaust before the period ends?" — a 3× burn on a 30-day budget drains it in ~10 days.
 
 ---
 
@@ -732,117 +715,60 @@ data in the right order and present it structured. That is platform engineering.
 
 ---
 
-### The learning path to CNCF contribution
+### The path to CNCF contribution
 
-A sequenced path from production SRE to CNCF contributor:
+I won't pretend there's one true roadmap — but two things reliably move the needle, and
+most "learn CNCF" plans get the order wrong.
 
-```
-Now                  Solidify Kubernetes depth: CKAD → CKA → CKS
-                     kubectl, Helm, ArgoCD, Istio, Prometheus — know the source code
+**Learn Go before you learn any single project.** kubectl, Helm, Prometheus, ArgoCD,
+Cilium — the stack you already operate is written in Go. You can't read a tool's source,
+let alone fix it, without it, and reading source is the actual on-ramp to contributing.
+Everything else is a distant second.
 
-Month 1–3            Go fundamentals
-                     Why: all major CNCF tools are written in Go
-                     Start: "A Tour of Go" (tour.golang.org)
-                     Then: read the source of krew (small, well-structured CNCF tool)
+**Contribute by fixing what already annoys you.** The highest-signal first contribution
+isn't a random `good-first-issue` — it's a bug or doc gap in a tool *you run in
+production*, where you already understand the failure and can write the reproduction. You
+have context a drive-by contributor doesn't; use it. Start with a well-scoped, well-sourced
+bug report, then a small PR.
 
-Month 3–6            CNCF ecosystem depth
-                     OpenTelemetry: distributed tracing, metrics, logs
-                     Prometheus operator: PrometheusRule CRDs, Alertmanager routing
-                     Cilium/eBPF: network policy and observability at the kernel level
-
-Month 6–12           First CNCF contribution
-                     Start: documentation issues (labelled good-first-issue)
-                     Progress: bug reports with reproduction steps and root cause
-                     Progress: small code contributions
-
-Parallel             Architecture foundations
-                     "Designing Distributed Systems" — Brendan Burns (co-creator of Kubernetes)
-                     "Production Kubernetes" — Josh Rosso et al.
-                     CNCF landscape: one day per major category; understand the problem each project solves
-```
-
-**Why Go specifically:** kubectl, Helm, Prometheus, Thanos, Kiali, ArgoCD, Cilium —
-the entire observability and platform tooling stack you work with daily is written in
-Go. Reading source code and eventually contributing requires it.
+Depth in the tools you operate beats breadth across the landscape. The contribution
+follows the depth, not the other way around.
 
 ---
 
-### Certifications that matter
+### Certifications: the prep is the point
 
-Certifications in Kubernetes are not about the certificate — they are about the
-preparation process, which forces you to deeply understand concepts you may have been
-using at surface level.
+The certificate isn't the value — the **preparation** is. Studying for a hands-on
+Kubernetes exam forces depth on concepts you've been using at surface level, which is why
+it's worth doing even if no one ever asks to see the badge.
 
-```
-CKAD  (Certified Kubernetes Application Developer)
-      Validates: workloads, config, networking, observability, storage
-      Time: 2 hours, hands-on terminal
-      Value: fastest cert to pass; validates what most SREs already do
+Which one, in one line each: **CKAD** if you mostly ship workloads (fastest; validates
+what most SREs already do); **CKA** for cluster-admin depth that matches real platform
+work; **CKS** (needs an active CKA) for hardening and supply-chain security, high demand in
+regulated enterprises. All three are 2-hour, hands-on terminal exams.
 
-CKA   (Certified Kubernetes Administrator)
-      Validates: cluster architecture, installation, configuration, networking
-      Time: 2 hours, hands-on terminal
-      Value: forces depth on cluster admin concepts; matches real platform work
-
-CKS   (Certified Kubernetes Security Specialist)
-      Requires: active CKA
-      Validates: cluster setup, hardening, supply chain, runtime security
-      Time: 2 hours, hands-on terminal
-      Value: bridges observability and security; high demand in enterprise
-```
-
-**Study resource order:**
-1. killer.sh practice exams — the closest simulation to the real exam environment
-2. "Kubernetes in Action" by Marko Luksa — best book for practitioners (not managers)
-3. Kubernetes docs: read the concepts section end to end, not just what you need
+What actually prepared me: **killer.sh** (closest simulation to the real thing), Marko
+Luksa's *Kubernetes in Action* (written for practitioners), and reading the Kubernetes
+docs' concepts section end to end — not just the parts you need today.
 
 ---
 
 ### Ten principles for junior SREs
 
-These are the things I wish someone had told me on my first on-call shift.
+The things I wish someone had told me on my first on-call shift. This is the **index** —
+each links to the section that covers it in depth; the two without a link (5 and 6) stand
+on their own.
 
-**1. Read the exit code.**
-Every good tool tells you whether it succeeded. The exit code is often more reliable
-than the output. Check it.
-
-**2. Classify before you act.**
-OOMKill does not mean "raise the limit." CrashLoopBackOff does not mean "restart."
-Identify the class of problem before choosing the fix.
-
-**3. Name the evidence.**
-"The service is down" is not a root cause.
-"Secret `auth-tokens` missing — 6 pods in FailedMount state, 0 replicas available" is.
-Be specific. Name the resource. State the impact.
-
-**4. Build the causation chain before you act.**
-When you find a problem, ask "what does this affect next?" and follow the chain until
-you reach the user-visible symptom. Act on the root, not the symptom.
-
-**5. Make the fix reversible.**
-Before you apply a fix, know exactly how to undo it. If you can't, find a smaller
-fix you can undo first, verify it works, then proceed.
-
-**6. Write it down.**
-The incident you investigate without documenting will happen again. The one you
-document becomes a playbook. The playbook becomes the tool that prevents it.
-
-**7. Understand the alerting window.**
-When you receive a burn rate alert, look at the window — not the current error rate.
-The window tells you whether this is an emergency or a slow drain.
-
-**8. The HPA needs both min and max to be right.**
-An HPA with minReplicas == maxReplicas does nothing. Check both values whenever you
-investigate a capacity incident.
-
-**9. Cost anomalies are reliability signals.**
-If a cost spike appears without a corresponding traffic increase, something is
-misusing resources. Investigate it as a reliability concern, not a billing concern.
-
-**10. Security misconfigurations are operational incidents waiting to happen.**
-A stale secret, a misconfigured certificate, an overly permissive RBAC binding — 
-these don't alert until they cause an outage. Treat security hygiene as proactive
-reliability work.
+1. **Read the exit code.** It's often more reliable than the output — check it. → [Severity as an exit code](#severity-as-an-exit-code)
+2. **Classify before you act.** OOMKill ≠ "raise the limit"; CrashLoopBackOff ≠ "restart." → [Classify before you recommend](#classify-before-you-recommend)
+3. **Name the evidence.** "The service is down" is not a root cause; the missing secret and its blast radius is. → [Building for the on-call reader](#building-for-the-on-call-reader)
+4. **Build the causation chain before you act.** Follow each link to the user-visible symptom, then act on the root. → [Causation chains vs correlation](#causation-chains-vs-correlation)
+5. **Make the fix reversible.** Before you apply a fix, know exactly how to undo it. If you can't, find a smaller fix you can undo, verify it, then proceed.
+6. **Write it down.** The incident you don't document happens again. The one you document becomes a playbook — then the tool that prevents it.
+7. **Read the window, not the current rate.** A burn-rate alert tells you how fast the budget is draining, not whether you're down right now. → [SLO burn rates](#slo-burn-rates-slow-burns-are-the-dangerous-ones)
+8. **An HPA needs both min and max right.** `minReplicas == maxReplicas` does nothing — check both on any capacity incident. → [HPA min==max](#hpa-minmax-autoscaling-that-doesnt-scale)
+9. **Cost anomalies are reliability signals.** A cost spike with no traffic increase is something misusing resources — investigate it as reliability, not billing. → [Cost is a reliability concern](#cost-is-a-reliability-concern)
+10. **Security misconfigurations are incidents waiting to happen.** Stale secrets, bad certs, over-broad RBAC don't alert until they cause an outage. → [Security is platform work](#security-is-platform-work)
 
 ---
 
