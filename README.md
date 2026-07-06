@@ -123,7 +123,9 @@ is healthy. No shell logic needed. The tool does the right thing.
 
 ### Classify before you recommend
 
-"Pod is OOMKilled → raise the memory limit" is wrong advice roughly 40% of the time.
+"Pod is OOMKilled → raise the memory limit" is one of the most common wrong fixes in
+Kubernetes operations — because OOMKilled is a *symptom* with several distinct causes,
+and "the limit is genuinely too low" is only one of them.
 
 Before prescribing a fix, classify the problem. The classification determines the
 action. Getting this wrong wastes time at best and makes things worse at worst.
@@ -142,7 +144,7 @@ on the wrong action.
 
 **This principle generalises to every finding type:**
 
-- `CrashLoopBackOff` → classify by exit code: 1=app error, 137=OOM kill, 143=SIGTERM
+- `CrashLoopBackOff` → classify by exit code (POSIX `128 + signal`): `1`=generic app error, `137`=SIGKILL — **OOMKilled *or* grace-period timeout; check the `Reason` field to tell them apart**, `143`=SIGTERM (graceful stop), `139`=SIGSEGV (segfault)
 - `ImagePullBackOff` → classify: auth failure vs network vs quota exceeded
 - Pending pods → classify: resource pressure vs node affinity vs PVC unavailable
 - Probe failure → classify: liveness (pod is being killed) vs readiness (pod is excluded from traffic)
@@ -318,6 +320,12 @@ rest of the month triggers a page.
 Multi-window alerting (fire on 1h AND 24h burn rate simultaneously) gives you
 defence in depth: fast fires catch outages, slow fires catch the quiet drains.
 
+> **Standard:** this is the *multiwindow, multi-burn-rate* method from Google's SRE
+> Workbook ([Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/)). Its
+> canonical recommendation for a 99.9% SLO pairs a **fast burn** (14.4× over 1h, ~2%
+> of a 30-day budget) with a **slow burn** (6× over 6h, ~5%), each confirmed by a
+> shorter window. Burn rate = `error_rate / (1 − SLO_target)`.
+
 > **Key insight:** when you see a burn rate alert, do not look at the current error
 > rate. Look at the window error budget consumption. The alert tells you the rate of
 > consumption — not the current state.
@@ -419,6 +427,12 @@ problem, because the security controls live in the platform layer.
 | Secret hygiene | no stale secrets, least-privilege access | audit and rotate |
 | TLS configuration | correct certificate chains, up-to-date cipher suites | own the ingress and service mesh config |
 
+> **Standard:** the three levels — `privileged` / `baseline` / `restricted` — are the
+> [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/),
+> enforced by the built-in **Pod Security Admission** controller via namespace labels
+> (`pod-security.kubernetes.io/enforce=<level>`). PSA is GA since Kubernetes v1.25 and
+> is the replacement for the removed PodSecurityPolicy.
+
 **The compliance angle:** enterprise platforms operate under security standards that
 require continuous compliance. A certificate with a name mismatch, an Azure storage
 account without soft-delete enabled, a service bus without TLS 1.2 minimum — these
@@ -468,6 +482,8 @@ build toward Level 3.
 
 macOS ships bash 3.2 — a version from 2007. The reason is legal, not technical:
 bash 4+ is licensed under GPLv3 and Apple does not ship GPLv3 software with the OS.
+(macOS switched its *default* interactive shell to zsh in 2019, but still bundles
+bash 3.2 for compatibility — so a portable bash script must still run there.)
 
 **This means these common bash 4+ features silently fail on macOS:**
 
@@ -626,10 +642,11 @@ with every sprint. It cannot be expressed in a lookup table.
 **The rule:** use deterministic code for what is always true regardless of context.
 Use LLMs for what requires reading context to interpret correctly.
 
-A lookup table that maps "OOMKill → cause service degradation" will be wrong in 90%
-of cases because the causal relationship depends on system topology that varies per
-deployment. An LLM reading alert descriptions, service names, and namespace topology
-can reason about it correctly.
+A lookup table that maps "OOMKill → caused the service degradation" is unreliable,
+because the causal relationship depends on system topology — which service sits in the
+synchronous request path, whether callers retry, what the deployment topology is — and
+that varies per deployment and per release. An LLM reading alert descriptions, service
+names, and namespace topology can reason about it; a static table cannot.
 
 ---
 
@@ -826,6 +843,33 @@ misusing resources. Investigate it as a reliability concern, not a billing conce
 A stale secret, a misconfigured certificate, an overly permissive RBAC binding — 
 these don't alert until they cause an outage. Treat security hygiene as proactive
 reliability work.
+
+---
+
+## References & Further Reading
+
+The principles here are grounded in established SRE and Kubernetes practice. Where a
+claim isn't covered by a public standard (e.g. severity-as-exit-code for health
+checkers), it's presented as a convention I apply — not an external rule.
+
+**SRE foundations**
+- [*Site Reliability Engineering*](https://sre.google/sre-book/) (Beyer, Jones, Petoff, Murphy — Google) — SLOs, SLIs, error budgets, toil.
+- [*The Site Reliability Workbook*](https://sre.google/workbook/table-of-contents/) — especially [Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/) for the multiwindow, multi-burn-rate method.
+
+**Kubernetes (official docs)**
+- [Pod Lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) — termination sequence: SIGTERM → grace period → SIGKILL (exit 137).
+- [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — requests/limits and OOM behavior.
+- [Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
+- [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
+- [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) & [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/).
+
+**Unix / CLI conventions**
+- Container and shell exit codes follow the POSIX `128 + signal` convention: `137`=SIGKILL, `143`=SIGTERM, `139`=SIGSEGV.
+- [GNU grep exit status](https://www.gnu.org/software/grep/manual/grep.html) — the `0`/`1`/`2` convention this journal borrows for health checkers.
+
+**Books**
+- Marko Luksa — *Kubernetes in Action*.
+- Brendan Burns — *Designing Distributed Systems*.
 
 ---
 
