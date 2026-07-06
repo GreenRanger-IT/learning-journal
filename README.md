@@ -35,7 +35,7 @@ they already know.
    - [Security is platform work](#security-is-platform-work)
    - [The proactive shift](#the-proactive-shift-from-reactive-to-preventive)
 
-4. [Unix CLI Engineering](#4-unix-cli-engineering)
+4. [Building CLI tools the Unix way](#4-building-cli-tools-the-unix-way)
    - [Bash portability: the macOS trap](#bash-portability-the-macos-trap)
    - [fd-redirect: buffering without losing state](#fd-redirect-buffering-without-losing-state)
    - [stdlib-only Python: the distribution advantage](#stdlib-only-python-the-distribution-advantage)
@@ -463,7 +463,11 @@ build toward Level 3.
 
 ---
 
-## 4. Unix CLI Engineering
+## 4. Building CLI tools the Unix way
+
+Nothing in this section is new — it's long-standing Unix tool convention, applied
+deliberately when you build operational CLIs. The value is in taking it seriously, not
+in the ideas being novel.
 
 ### Bash portability: the macOS trap
 
@@ -505,6 +509,9 @@ before shipping.
 ---
 
 ### fd-redirect: buffering without losing state
+
+*Implementation detail, not a universal rule — a technique I reached for building
+`kubectl-sentinel`. Worth knowing if you build similar CLIs; skip it otherwise.*
 
 When you need to reorder output — print a summary before details that are computed
 after the details — the Unix answer is file descriptor redirection.
