@@ -13,6 +13,11 @@ Not theory. Not tutorials. Real lessons from real production systems, written so
 junior SREs can skip the mistakes and senior engineers can find the words for what
 they already know.
 
+**Evidence contract (GreenerPlatform tools):** deterministic CLIs establish what was
+observed and what failed to collect. Correlation output (`root_cause`, `causation_chain`,
+confidence) names **candidate** hypotheses until you verify mechanism and impact. Review
+every recommended command before you run it.
+
 ---
 
 ## Table of Contents
@@ -668,9 +673,9 @@ symptom, but the causal link to the API degradation is inferred, not confirmed.
 
 This single line tells the engineer exactly what to verify before acting.
 
-> **Principle:** a tool that tells you "the root cause is X" with no confidence
-> qualifier is making a claim it cannot support. Confidence is not a weakness
-> signal — it is an honesty signal.
+> **Principle:** a tool that states a single "root cause" with no confidence qualifier
+> is making a claim it cannot support. Prefer ranked hypotheses, explicit gaps, and
+> confidence. That is an honesty signal, not a weakness.
 
 ---
 
